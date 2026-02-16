@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Check TypeScript
+echo "📝 Checking TypeScript..."
+npx tsc --noEmit
+
+# Run ESLint
+echo "🔧 Running ESLint..."
+npx next lint
+
+# Format code with Prettier
+echo "🎨 Formatting code..."
+npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}" --ignore-unknown
+
+echo "✅ Pre-commit checks passed!"

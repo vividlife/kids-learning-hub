@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PARENT
+  CHILD
+  ADMIN
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum WordStatus {
+  NEW
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  FILL_IN_BLANK
+  MATCHING
+  SEQUENCING
+  TRUE_FALSE
+}
+
+enum ContentType {
+  PDF
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String
+  avatar        String?
+  role          UserRole      @default(CHILD)
+  age           Int?
+  grade         String?
+  parentId      String?       // 如果是孩子，关联家长ID
+  password      String        @default("") // 实际使用中应该加密存储
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  parent        User?         @relation("ParentChildren", fields: [parentId], references: [id])
+  children      User[]        @relation("ParentChildren")
+  learningPlans LearningPlan[]
+  progress      Progress[]
+  achievements  Achievement[]
+  sessions      StudySession[]
+  
+  @@index([parentId])
+  @@index([role])
+}
+
+model Word {
+  id            String        @id @default(cuid())
+  word          String
+  translation   String
+  pronunciation String?
+  example       String?
+  imageUrl      String?
+  audioUrl      String?
+  category      String        // 动物、食物、颜色等
+  difficulty    DifficultyLevel @default(EASY)
+  status        WordStatus    @default(NEW)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  studyRecords  StudyRecord[]
+  
+  @@index([userId])
+  @@index([category])
+  @@index([difficulty])
+  @@index([status])
+}
+
+model StudyRecord {
+  id            String        @id @default(cuid())
+  wordId        String
+  userId        String
+  correct       Boolean
+  responseTime  Int           // 毫秒
+  exerciseType  String        // flashcard, multiple_choice, spelling
+  createdAt     DateTime      @default(now())
+  
+  // 关系
+  word          Word          @relation(fields: [wordId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([wordId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model LearningPlan {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  type          String        // daily, weekly, custom
+  startDate     DateTime
+  endDate       DateTime?
+  completed     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  tasks         LearningTask[]
+  
+  @@index([userId])
+  @@index([completed])
+}
+
+model LearningTask {
+  id            String        @id @default(cuid())
+  planId        String
+  title         String
+  description   String?
+  type          String        // word_study, quiz, reading
+  targetCount   Int?          // 目标数量，如学习10个单词
+  completed     Boolean       @default(false)
+  order         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  plan          LearningPlan  @relation(fields: [planId], references: [id])
+  
+  @@index([planId])
+  @@index([completed])
+}
+
+model Progress {
+  id            String        @id @default(cuid())
+  userId        String
+  metric        String        // words_learned, quiz_score, time_spent
+  value         Float
+  date          DateTime      @default(now())
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([date])
+}
+
+model Achievement {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  description   String
+  icon          String
+  unlockedAt    DateTime      @default(now())
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model StudySession {
+  id            String        @id @default(cuid())
+  userId        String
+  startTime     DateTime      @default(now())
+  endTime       DateTime?
+  duration      Int?          // 秒
+  activityType  String        // word_study, quiz, game
+  score         Float?
+  createdAt     DateTime      @default(now())
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([startTime])
+}
+
+model Question {
+  id            String        @id @default(cuid())
+  title         String
+  content       String
+  type          QuestionType
+  difficulty    DifficultyLevel @default(EASY)
+  subject       String        // english, math, science
+  options       String[]      // 对于选择题
+  correctAnswer String
+  explanation   String?
+  imageUrl      String?
+  audioUrl      String?
+  videoUrl      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  quizzes       QuizQuestion[]
+  
+  @@index([subject])
+  @@index([difficulty])
+  @@index([type])
+}
+
+model Quiz {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  subject       String
+  difficulty    DifficultyLevel @default(EASY)
+  timeLimit     Int?          // 秒
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  questions     QuizQuestion[]
+  attempts      QuizAttempt[]
+}
+
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  quizId      String
+  questionId  String
+  order       Int      @default(0)
+  
+  // 关系
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  question    Question @relation(fields: [questionId], references: [id])
+  
+  @@unique([quizId, questionId])
+  @@index([quizId])
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id            String        @id @default(cuid())
+  quizId        String
+  userId        String
+  score         Float
+  totalQuestions Int
+  correctAnswers Int
+  timeSpent     Int?          // 秒
+  completedAt   DateTime      @default(now())
+  
+  // 关系
+  quiz          Quiz          @relation(fields: [quizId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([quizId])
+  @@index([userId])
+  @@index([completedAt])
+}
+
+model LearningContent {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  type          ContentType
+  subject       String
+  grade         String?
+  fileUrl       String
+  thumbnailUrl  String?
+  duration      Int?          // 对于音视频，秒
+  size          Int?          // 文件大小，字节
+  uploadedBy    String        // 上传者用户ID
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  uploader      User          @relation(fields: [uploadedBy], references: [id])
+  
+  @@index([subject])
+  @@index([grade])
+  @@index([uploadedBy])
+}
+
+model GameScore {
+  id            String        @id @default(cuid())
+  userId        String
+  gameType      String        // matching_game, spelling_bee, memory_game
+  score         Int
+  level         Int
+  timeSpent     Int           // 秒
+  playedAt      DateTime      @default(now())
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([gameType])
+  @@index([playedAt])
+}
+
+model Notification {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  message       String
+  type          String        // achievement, reminder, progress
+  read          Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  
+  // 关系
+  user          User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}

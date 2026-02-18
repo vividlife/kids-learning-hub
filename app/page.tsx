@@ -29,13 +29,17 @@ export default function HomePage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button size="lg" className="gap-2 bg-gradient-to-r from-learning-blue to-learning-purple hover:opacity-90">
-                <Gamepad2 className="h-5 w-5" />
-                开始学习
+              <Button size="lg" className="gap-2 bg-gradient-to-r from-learning-blue to-learning-purple hover:opacity-90" asChild>
+                <a href="/select-daughter">
+                  <Gamepad2 className="h-5 w-5" />
+                  女儿登录
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                <Users className="h-5 w-5" />
-                家长登录
+              <Button size="lg" variant="outline" className="gap-2" asChild>
+                <a href="/parent/login">
+                  <Users className="h-5 w-5" />
+                  家长登录
+                </a>
               </Button>
             </div>
           </div>

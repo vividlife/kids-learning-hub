@@ -76,16 +76,55 @@ export const SUBJECTS = [
   "社会",
 ] as const;
 
-// 年级分类
-export const GRADES = [
-  "幼儿园",
-  "一年级",
-  "二年级",
-  "三年级",
-  "四年级",
-  "五年级",
-  "六年级",
-] as const;
+// 年级枚举
+export const CHILD_GRADES = {
+  PRESCHOOL: "PRESCHOOL",      // 幼儿园
+  GRADE_1: "GRADE_1",          // 一年级
+  GRADE_2: "GRADE_2",          // 二年级
+  GRADE_3: "GRADE_3",          // 三年级（黄乃静）
+  GRADE_4: "GRADE_4",          // 四年级
+  GRADE_5: "GRADE_5",          // 五年级
+  GRADE_6: "GRADE_6",          // 六年级
+  JUNIOR_HIGH_1: "JUNIOR_HIGH_1", // 初一
+  JUNIOR_HIGH_2: "JUNIOR_HIGH_2", // 初二
+  JUNIOR_HIGH_3: "JUNIOR_HIGH_3", // 初三
+  SENIOR_HIGH_1: "SENIOR_HIGH_1", // 高一（黄乃馨）
+  SENIOR_HIGH_2: "SENIOR_HIGH_2", // 高二
+  SENIOR_HIGH_3: "SENIOR_HIGH_3", // 高三
+  COLLEGE: "COLLEGE",          // 大学
+} as const;
+
+// 年级显示名称
+export const GRADE_DISPLAY_NAMES: Record<string, string> = {
+  PRESCHOOL: "幼儿园",
+  GRADE_1: "一年级",
+  GRADE_2: "二年级",
+  GRADE_3: "三年级",
+  GRADE_4: "四年级",
+  GRADE_5: "五年级",
+  GRADE_6: "六年级",
+  JUNIOR_HIGH_1: "初一",
+  JUNIOR_HIGH_2: "初二",
+  JUNIOR_HIGH_3: "初三",
+  SENIOR_HIGH_1: "高一",
+  SENIOR_HIGH_2: "高二",
+  SENIOR_HIGH_3: "高三",
+  COLLEGE: "大学",
+};
+
+// 学习级别
+export const LEARNING_LEVELS = {
+  BEGINNER: "BEGINNER",       // 初级（黄乃静级别）
+  INTERMEDIATE: "INTERMEDIATE", // 中级
+  ADVANCED: "ADVANCED",       // 高级（黄乃馨级别）
+} as const;
+
+// 学习级别显示名称
+export const LEVEL_DISPLAY_NAMES: Record<string, string> = {
+  BEGINNER: "初级",
+  INTERMEDIATE: "中级",
+  ADVANCED: "高级",
+};
 
 // 游戏类型
 export const GAME_TYPES = {
@@ -105,6 +144,25 @@ export const ACHIEVEMENT_TYPES = {
   NIGHT_OWL: "night_owl",
   SPEED_LEARNER: "speed_learner",
   CONSISTENT_LEARNER: "consistent_learner",
+  SISTER_COMPETITION_WINNER: "sister_competition_winner",
+  SISTER_COLLABORATION: "sister_collaboration",
+  GRADE_SPECIFIC: "grade_specific",
+} as const;
+
+// 姐妹关系类型
+export const SISTER_RELATIONSHIPS = {
+  SISTERS: "SISTERS",
+  COMPETITION: "COMPETITION",
+  COLLABORATION: "COLLABORATION",
+} as const;
+
+// 姐妹竞赛类型
+export const SISTER_COMPETITION_TYPES = {
+  WORD_COUNT: "WORD_COUNT",
+  QUIZ_SCORE: "QUIZ_SCORE",
+  STUDY_TIME: "STUDY_TIME",
+  CORRECT_RATE: "CORRECT_RATE",
+  STREAK_DAYS: "STREAK_DAYS",
 } as const;
 
 // 通知类型
@@ -161,11 +219,31 @@ export const COLOR_THEMES = {
 
 // 默认配置
 export const DEFAULT_CONFIG = {
-  DAILY_WORD_GOAL: 10,
-  WEEKLY_STUDY_GOAL: 5, // 小时
-  REVIEW_INTERVAL_DAYS: [1, 3, 7, 14, 30], // 艾宾浩斯复习间隔
-  QUIZ_PASSING_SCORE: 70, // 百分比
-  MAX_DAILY_STUDY_TIME: 120, // 分钟
+  // 黄乃静（三年级）配置
+  NAJING: {
+    DAILY_WORD_GOAL: 5,
+    WEEKLY_STUDY_GOAL: 2, // 小时
+    MAX_SESSION_TIME: 20, // 分钟
+    REVIEW_INTERVAL_DAYS: [1, 3, 7],
+    QUIZ_PASSING_SCORE: 70,
+    GAME_RATIO: 0.6, // 游戏化内容占比
+  },
+  // 黄乃馨（高一）配置
+  NAXIN: {
+    DAILY_WORD_GOAL: 15,
+    WEEKLY_STUDY_GOAL: 5, // 小时
+    MAX_SESSION_TIME: 45, // 分钟
+    REVIEW_INTERVAL_DAYS: [1, 3, 7, 14, 30],
+    QUIZ_PASSING_SCORE: 80,
+    GAME_RATIO: 0.2, // 游戏化内容占比
+  },
+  // 通用配置
+  GENERAL: {
+    MAX_DAILY_STUDY_TIME: 120, // 分钟
+    SISTER_COMPETITION_DURATION: 7, // 天
+    ACHIEVEMENT_NOTIFICATION: true,
+    PROGRESS_REPORT_FREQUENCY: "weekly", // weekly, monthly
+  },
 } as const;
 
 // 路由路径

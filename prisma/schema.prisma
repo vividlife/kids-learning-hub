@@ -13,6 +13,29 @@ enum UserRole {
   ADMIN
 }
 
+enum ChildGrade {
+  PRESCHOOL      // 幼儿园
+  GRADE_1        // 一年级
+  GRADE_2        // 二年级
+  GRADE_3        // 三年级（黄乃静）
+  GRADE_4        // 四年级
+  GRADE_5        // 五年级
+  GRADE_6        // 六年级
+  JUNIOR_HIGH_1  // 初一
+  JUNIOR_HIGH_2  // 初二
+  JUNIOR_HIGH_3  // 初三
+  SENIOR_HIGH_1  // 高一（黄乃馨）
+  SENIOR_HIGH_2  // 高二
+  SENIOR_HIGH_3  // 高三
+  COLLEGE        // 大学
+}
+
+enum LearningLevel {
+  BEGINNER       // 初级（乃静级别）
+  INTERMEDIATE   // 中级
+  ADVANCED       // 高级（乃馨级别）
+}
+
 enum DifficultyLevel {
   EASY
   MEDIUM
@@ -49,9 +72,11 @@ model User {
   avatar        String?
   role          UserRole      @default(CHILD)
   age           Int?
-  grade         String?
+  grade         ChildGrade?   // 使用枚举类型
+  learningLevel LearningLevel? // 学习级别
   parentId      String?       // 如果是孩子，关联家长ID
   password      String        @default("") // 实际使用中应该加密存储
+  preferences   Json?         // 用户偏好设置
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   
@@ -62,9 +87,12 @@ model User {
   progress      Progress[]
   achievements  Achievement[]
   sessions      StudySession[]
+  sisterLinks   SisterLink[]  // 姐妹关联
   
   @@index([parentId])
   @@index([role])
+  @@index([grade])
+  @@index([learningLevel])
 }
 
 model Word {
@@ -77,18 +105,22 @@ model Word {
   audioUrl      String?
   category      String        // 动物、食物、颜色等
   difficulty    DifficultyLevel @default(EASY)
+  targetGrade   ChildGrade?   // 目标年级
+  targetLevel   LearningLevel? // 目标学习级别
   status        WordStatus    @default(NEW)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   
   // 关系
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
   studyRecords  StudyRecord[]
   
   @@index([userId])
   @@index([category])
   @@index([difficulty])
+  @@index([targetGrade])
+  @@index([targetLevel])
   @@index([status])
 }
 
@@ -201,6 +233,8 @@ model Question {
   type          QuestionType
   difficulty    DifficultyLevel @default(EASY)
   subject       String        // english, math, science
+  targetGrade   ChildGrade?   // 目标年级
+  targetLevel   LearningLevel? // 目标学习级别
   options       String[]      // 对于选择题
   correctAnswer String
   explanation   String?
@@ -216,6 +250,8 @@ model Question {
   @@index([subject])
   @@index([difficulty])
   @@index([type])
+  @@index([targetGrade])
+  @@index([targetLevel])
 }
 
 model Quiz {
@@ -224,6 +260,8 @@ model Quiz {
   description   String?
   subject       String
   difficulty    DifficultyLevel @default(EASY)
+  targetGrade   ChildGrade?   // 目标年级
+  targetLevel   LearningLevel? // 目标学习级别
   timeLimit     Int?          // 秒
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -231,6 +269,9 @@ model Quiz {
   // 关系
   questions     QuizQuestion[]
   attempts      QuizAttempt[]
+  
+  @@index([targetGrade])
+  @@index([targetLevel])
 }
 
 model QuizQuestion {
@@ -273,7 +314,8 @@ model LearningContent {
   description   String?
   type          ContentType
   subject       String
-  grade         String?
+  targetGrade   ChildGrade?   // 目标年级
+  targetLevel   LearningLevel? // 目标学习级别
   fileUrl       String
   thumbnailUrl  String?
   duration      Int?          // 对于音视频，秒
@@ -286,7 +328,8 @@ model LearningContent {
   uploader      User          @relation(fields: [uploadedBy], references: [id])
   
   @@index([subject])
-  @@index([grade])
+  @@index([targetGrade])
+  @@index([targetLevel])
   @@index([uploadedBy])
 }
 
@@ -307,12 +350,50 @@ model GameScore {
   @@index([playedAt])
 }
 
+model SisterLink {
+  id            String        @id @default(cuid())
+  sister1Id     String
+  sister2Id     String
+  relationship  String        // SISTERS, COMPETITION, COLLABORATION
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  sister1       User          @relation("Sister1", fields: [sister1Id], references: [id])
+  sister2       User          @relation("Sister2", fields: [sister2Id], references: [id])
+  
+  @@unique([sister1Id, sister2Id])
+  @@index([sister1Id])
+  @@index([sister2Id])
+}
+
+model SisterCompetition {
+  id            String        @id @default(cuid())
+  sisterLinkId  String
+  type          String        // WORD_COUNT, QUIZ_SCORE, STUDY_TIME
+  startDate     DateTime
+  endDate       DateTime
+  sister1Score  Int           @default(0)
+  sister2Score  Int           @default(0)
+  winnerId      String?
+  completed     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // 关系
+  sisterLink    SisterLink    @relation(fields: [sisterLinkId], references: [id])
+  winner        User?         @relation(fields: [winnerId], references: [id])
+  
+  @@index([sisterLinkId])
+  @@index([completed])
+}
+
 model Notification {
   id            String        @id @default(cuid())
   userId        String
   title         String
   message       String
-  type          String        // achievement, reminder, progress
+  type          String        // achievement, reminder, progress, sister
   read          Boolean       @default(false)
   createdAt     DateTime      @default(now())
   

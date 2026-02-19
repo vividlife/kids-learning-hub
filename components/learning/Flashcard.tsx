@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, RotateCcw } from 'lucide-react';
@@ -44,10 +45,13 @@ export default function Flashcard({ word, onPronounce, onFlip, isFlipped, onNext
         {/* Front */}
         <Card className="absolute w-full h-full backface-hidden shadow-2xl cursor-pointer flex items-center justify-center p-8 text-center bg-gradient-to-br from-blue-400 to-purple-500 text-white">
           <div>
-            <img 
-              src={imageUrl} 
+            <Image
+              src={imageUrl}
               alt={word.word}
+              width={256}
+              height={192}
               className="w-64 h-48 object-cover rounded-xl mb-6 shadow-lg mx-auto"
+              loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
@@ -60,10 +64,13 @@ export default function Flashcard({ word, onPronounce, onFlip, isFlipped, onNext
         {/* Back */}
         <Card className={`absolute w-full h-full backface-hidden rotate-y-180 shadow-2xl flex flex-col justify-between p-8 text-center bg-gradient-to-br from-green-400 to-emerald-500 text-white`}>
           <div>
-            <img 
-              src={imageUrl} 
+            <Image
+              src={imageUrl}
               alt={word.word}
+              width={256}
+              height={192}
               className="w-64 h-48 object-cover rounded-xl mb-6 shadow-lg mx-auto"
+              loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}

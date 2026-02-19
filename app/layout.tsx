@@ -3,6 +3,7 @@ import { Inter, Fredoka } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import PerformanceMonitor from "@/components/performance-monitor";
 import { Navbar } from "@/components/layout/navbar";
 
 const inter = Inter({
@@ -50,6 +51,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PerformanceMonitor />
           <Navbar />
           <main className="min-h-screen">
             {children}

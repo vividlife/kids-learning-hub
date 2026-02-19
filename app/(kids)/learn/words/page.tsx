@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Flashcard from '@/components/learning/Flashcard';
+const Flashcard = dynamic(() => import('@/components/learning/Flashcard'), { ssr: false });
 import { Play, Shuffle, Repeat, Volume2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Word {

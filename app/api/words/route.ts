@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { eq, and, like } from 'drizzle-orm'; // fallback if no drizzle, but prisma
+// Removed unused Drizzle import
+
 
 // Note: Assuming Prisma is working. If not, schema fixes needed separately.
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'PARENT') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -19,11 +20,50 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category') || undefined;
   const difficulty = searchParams.get('difficulty') || undefined;
   const search = searchParams.get('search') || undefined;
+  const childId = searchParams.get('childId') || undefined;
 
-  const where: any = {
-    userId: session.user.id, // parent's words or all?
-  };
+  // Build where clause based on user role
+  let where: any = {};
 
+  if (session.user.role === 'PARENT') {
+    // Parent can see their own words and their children's words
+    if (childId) {
+      // Get specific child's words (verify child belongs to parent)
+      const child = await db.user.findFirst({
+        where: {
+          id: childId,
+          parentId: session.user.id,
+        },
+      });
+      
+      if (!child) {
+        return NextResponse.json({ error: 'Child not found or unauthorized' }, { status: 403 });
+      }
+      
+      where.userId = childId;
+    } else {
+      // Get all children IDs for this parent
+      const children = await db.user.findMany({
+        where: {
+          parentId: session.user.id,
+          role: 'CHILD',
+        },
+        select: { id: true },
+      });
+      
+      const childIds = children.map(child => child.id);
+      childIds.push(session.user.id); // Include parent's own words
+      
+      where.userId = { in: childIds };
+    }
+  } else if (session.user.role === 'CHILD') {
+    // Child can only see their own words
+    where.userId = session.user.id;
+  } else {
+    return NextResponse.json({ error: 'Unauthorized role' }, { status: 403 });
+  }
+
+  // Apply filters
   if (category) where.category = category;
   if (difficulty) where.difficulty = difficulty;
   if (search) where.OR = [
@@ -51,6 +91,7 @@ export async function GET(request: NextRequest) {
         targetLevel: true,
         status: true,
         createdAt: true,
+        userId: true, // Include userId to identify who owns the word
       },
     }),
     db.word.count({ where }),
@@ -66,20 +107,54 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'PARENT') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const body = await request.json();
+    const { childId, ...wordData } = body;
+    
+    let targetUserId = session.user.id;
+    
+    // If parent is creating word for a child
+    if (session.user.role === 'PARENT' && childId) {
+      // Verify child belongs to parent
+      const child = await db.user.findFirst({
+        where: {
+          id: childId,
+          parentId: session.user.id,
+        },
+      });
+      
+      if (!child) {
+        return NextResponse.json({ error: 'Child not found or unauthorized' }, { status: 403 });
+      }
+      
+      targetUserId = childId;
+    } else if (session.user.role === 'CHILD') {
+      // Child can only create words for themselves
+      targetUserId = session.user.id;
+    } else if (session.user.role === 'PARENT' && !childId) {
+      // Parent creating word for themselves
+      targetUserId = session.user.id;
+    } else {
+      return NextResponse.json({ error: 'Unauthorized role' }, { status: 403 });
+    }
+
     const word = await db.word.create({
       data: {
-        ...body,
-        userId: session.user.id,
+        ...wordData,
+        userId: targetUserId,
       },
     });
+    
     return NextResponse.json(word, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create word' }, { status: 500 });
+    console.error('Error creating word:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create word',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

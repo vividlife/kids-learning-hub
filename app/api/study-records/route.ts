@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(studyRecord, { status: 201 });
   } catch (error) {
-    console.error('Failed to create study record:', error);
+    // Removed console.error for production
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

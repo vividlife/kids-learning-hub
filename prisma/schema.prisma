@@ -4,82 +4,25 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-}
-
-enum UserRole {
-  PARENT
-  CHILD
-  ADMIN
-}
-
-enum ChildGrade {
-  PRESCHOOL // 幼儿园
-  GRADE_1 // 一年级
-  GRADE_2 // 二年级
-  GRADE_3 // 三年级（黄乃静）
-  GRADE_4 // 四年级
-  GRADE_5 // 五年级
-  GRADE_6 // 六年级
-  JUNIOR_HIGH_1 // 初一
-  JUNIOR_HIGH_2 // 初二
-  JUNIOR_HIGH_3 // 初三
-  SENIOR_HIGH_1 // 高一（黄乃馨）
-  SENIOR_HIGH_2 // 高二
-  SENIOR_HIGH_3 // 高三
-  COLLEGE // 大学
-}
-
-enum LearningLevel {
-  BEGINNER // 初级（乃静级别）
-  INTERMEDIATE // 中级
-  ADVANCED // 高级（乃馨级别）
-}
-
-enum DifficultyLevel {
-  EASY
-  MEDIUM
-  HARD
-}
-
-enum WordStatus {
-  NEW
-  LEARNING
-  REVIEW
-  MASTERED
-}
-
-enum QuestionType {
-  MULTIPLE_CHOICE
-  FILL_IN_BLANK
-  MATCHING
-  SEQUENCING
-  TRUE_FALSE
-}
-
-enum ContentType {
-  PDF
-  IMAGE
-  AUDIO
-  VIDEO
-  DOCUMENT
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
+  id            String   @id @default(cuid())
+  email         String   @unique
   name          String
   avatar        String?
-  role          UserRole       @default(CHILD)
+  role          String   @default("CHILD") // PARENT, CHILD, ADMIN
   age           Int?
-  grade         ChildGrade? // 使用枚举类型
-  learningLevel LearningLevel? // 学习级别
-  parentId      String? // 如果是孩子，关联家长ID
-  password      String         @default("") // 实际使用中应该加密存储
-  preferences   Json? // 用户偏好设置
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  grade         String?  // PRESCHOOL, GRADE_1, GRADE_2, etc.
+  learningLevel String?  // BEGINNER, INTERMEDIATE, ADVANCED
+  parentId      String?  // If child, link to parent
+  password      String   @default("")
+  preferences   String?  // JSON string
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  // 关系
+  // Relations
   parent           User?             @relation("ParentChildren", fields: [parentId], references: [id])
   children         User[]            @relation("ParentChildren")
   learningPlans    LearningPlan[]
@@ -94,6 +37,8 @@ model User {
   gameScores       GameScore[]
   notifications    Notification[]
   learningContents LearningContent[]
+  accounts         Account[]
+  authSessions     Session[]
 
   @@index([parentId])
   @@index([role])
@@ -102,23 +47,23 @@ model User {
 }
 
 model Word {
-  id            String          @id @default(cuid())
-  word          String          @unique
+  id            String   @id @default(cuid())
+  word          String   @unique
   translation   String
   pronunciation String?
   example       String?
   imageUrl      String?
   audioUrl      String?
-  category      String // 动物、食物、颜色等
-  difficulty    DifficultyLevel @default(EASY)
-  targetGrade   ChildGrade?
-  targetLevel   LearningLevel?
-  tags          Json?
-  status        WordStatus      @default(NEW)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  category      String
+  difficulty    String   @default("EASY") // EASY, MEDIUM, HARD
+  targetGrade   String?
+  targetLevel   String?
+  tags          String?  // JSON string
+  status        String   @default("NEW") // NEW, LEARNING, REVIEW, MASTERED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  // 关系
+  // Relations
   userId       String?
   user         User?         @relation(fields: [userId], references: [id])
   studyRecords StudyRecord[]
@@ -137,11 +82,11 @@ model StudyRecord {
   wordId       String
   userId       String
   correct      Boolean
-  responseTime Int // 毫秒
-  exerciseType String // flashcard, multiple_choice, spelling
+  responseTime Int      // milliseconds
+  exerciseType String   // flashcard, multiple_choice, spelling
   createdAt    DateTime @default(now())
 
-  // 关系
+  // Relations
   word Word @relation(fields: [wordId], references: [id])
   user User @relation(fields: [userId], references: [id])
 
@@ -155,14 +100,14 @@ model LearningPlan {
   userId      String
   title       String
   description String?
-  type        String // daily, weekly, custom
+  type        String    // daily, weekly, custom
   startDate   DateTime
   endDate     DateTime?
   completed   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // 关系
+  // Relations
   user  User           @relation(fields: [userId], references: [id])
   tasks LearningTask[]
 
@@ -175,14 +120,14 @@ model LearningTask {
   planId      String
   title       String
   description String?
-  type        String // word_study, quiz, reading
-  targetCount Int? // 目标数量，如学习10个单词
+  type        String   // word_study, quiz, reading
+  targetCount Int?
   completed   Boolean  @default(false)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // 关系
+  // Relations
   plan LearningPlan @relation(fields: [planId], references: [id])
 
   @@index([planId])
@@ -192,11 +137,11 @@ model LearningTask {
 model Progress {
   id     String   @id @default(cuid())
   userId String
-  metric String // words_learned, quiz_score, time_spent
+  metric String   // words_learned, quiz_score, time_spent
   value  Float
   date   DateTime @default(now())
 
-  // 关系
+  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -211,7 +156,7 @@ model Achievement {
   icon        String
   unlockedAt  DateTime @default(now())
 
-  // 关系
+  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -222,12 +167,12 @@ model StudySession {
   userId       String
   startTime    DateTime  @default(now())
   endTime      DateTime?
-  duration     Int? // 秒
-  activityType String // word_study, quiz, game
+  duration     Int?      // seconds
+  activityType String    // word_study, quiz, game
   score        Float?
   createdAt    DateTime  @default(now())
 
-  // 关系
+  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -235,24 +180,24 @@ model StudySession {
 }
 
 model Question {
-  id            String          @id @default(cuid())
+  id            String   @id @default(cuid())
   title         String
   content       String
-  type          QuestionType
-  difficulty    DifficultyLevel @default(EASY)
-  subject       String // english, math, science
-  targetGrade   ChildGrade? // 目标年级
-  targetLevel   LearningLevel? // 目标学习级别
-  options       Json? // 对于选择题
+  type          String   // MULTIPLE_CHOICE, FILL_IN_BLANK, etc.
+  difficulty    String   @default("EASY")
+  subject       String   // english, math, science
+  targetGrade   String?
+  targetLevel   String?
+  options       String?  // JSON string
   correctAnswer String
   explanation   String?
   imageUrl      String?
   audioUrl      String?
   videoUrl      String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  // 关系
+  // Relations
   quizzes QuizQuestion[]
 
   @@index([subject])
@@ -263,18 +208,18 @@ model Question {
 }
 
 model Quiz {
-  id          String          @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
   subject     String
-  difficulty  DifficultyLevel @default(EASY)
-  targetGrade ChildGrade? // 目标年级
-  targetLevel LearningLevel? // 目标学习级别
-  timeLimit   Int? // 秒
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  difficulty  String   @default("EASY")
+  targetGrade String?
+  targetLevel String?
+  timeLimit   Int?     // seconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  // 关系
+  // Relations
   questions QuizQuestion[]
   attempts  QuizAttempt[]
 
@@ -288,7 +233,7 @@ model QuizQuestion {
   questionId String
   order      Int    @default(0)
 
-  // 关系
+  // Relations
   quiz     Quiz     @relation(fields: [quizId], references: [id])
   question Question @relation(fields: [questionId], references: [id])
 
@@ -304,10 +249,10 @@ model QuizAttempt {
   score          Float
   totalQuestions Int
   correctAnswers Int
-  timeSpent      Int? // 秒
+  timeSpent      Int?     // seconds
   completedAt    DateTime @default(now())
 
-  // 关系
+  // Relations
   quiz Quiz @relation(fields: [quizId], references: [id])
   user User @relation(fields: [userId], references: [id])
 
@@ -317,22 +262,22 @@ model QuizAttempt {
 }
 
 model LearningContent {
-  id           String         @id @default(cuid())
+  id           String   @id @default(cuid())
   title        String
   description  String?
-  type         ContentType
+  type         String   // PDF, IMAGE, AUDIO, VIDEO, DOCUMENT
   subject      String
-  targetGrade  ChildGrade? // 目标年级
-  targetLevel  LearningLevel? // 目标学习级别
+  targetGrade  String?
+  targetLevel  String?
   fileUrl      String
   thumbnailUrl String?
-  duration     Int? // 对于音视频，秒
-  size         Int? // 文件大小，字节
-  uploadedBy   String // 上传者用户ID
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  duration     Int?     // seconds for audio/video
+  size         Int?     // bytes
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // 关系
+  // Relations
   uploader User @relation(fields: [uploadedBy], references: [id])
 
   @@index([subject])
@@ -344,13 +289,13 @@ model LearningContent {
 model GameScore {
   id        String   @id @default(cuid())
   userId    String
-  gameType  String // matching_game, spelling_bee, memory_game
+  gameType  String   // matching_game, spelling_bee, memory_game
   score     Int
   level     Int
-  timeSpent Int // 秒
+  timeSpent Int      // seconds
   playedAt  DateTime @default(now())
 
-  // 关系
+  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -363,14 +308,53 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      String // achievement, reminder, progress, sister
+  type      String   // achievement, reminder, progress, sister
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  // 关系
+  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+// NextAuth models for authentication
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

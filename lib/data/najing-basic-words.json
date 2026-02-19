@@ -1,0 +1,23 @@
+[
+  {
+    "word": "apple",
+    "translation": "苹果",
+    "pronunciation": "/ˈæp.əl/",
+    "example": "I eat an apple every day.",
+    "category": "水果",
+    "difficulty": "EASY",
+    "targetGrade": "GRADE_3",
+    "targetLevel": "BEGINNER"
+  },
+  {
+    "word": "dog",
+    "translation": "狗",
+    "pronunciation": "/dɒɡ/",
+    "example": "The dog is barking.",
+    "category": "动物",
+    "difficulty": "EASY",
+    "targetGrade": "GRADE_3",
+    "targetLevel": "BEGINNER"
+  }
+  // Note: Full 300 words to be expanded. Samples for now.
+]

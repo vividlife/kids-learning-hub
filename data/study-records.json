@@ -1,0 +1,29 @@
+[
+  {
+    "id": "rec1",
+    "word": "apple",
+    "userId": "najing",
+    "correct": true,
+    "responseTime": 2000,
+    "exerciseType": "flashcard",
+    "category": "水果"
+  },
+  {
+    "id": "rec2",
+    "word": "dog",
+    "userId": "najing",
+    "correct": false,
+    "responseTime": 5000,
+    "exerciseType": "multiple_choice",
+    "category": "动物"
+  },
+  {
+    "id": "rec3",
+    "word": "apple",
+    "userId": "naxin",
+    "correct": true,
+    "responseTime": 1000,
+    "exerciseType": "spelling",
+    "category": "水果"
+  }
+]
